@@ -25,17 +25,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          build-args: |
-             NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
-             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
-             NEXT_PUBLIC_YOUTUBE_API_KEY=${{ secrets.NEXT_PUBLIC_YOUTUBE_API_KEY }}
-             CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-             CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-             CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-             EMAIL_USER=${{ secrets.EMAIL_USER }}
-             EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/sufipulsefrontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/sufipulsefrontendupdated:latest
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -45,7 +36,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.APP_DIR }}
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/sufipulsefrontend:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/sufipulsefrontendupdated:latest
             docker compose down frontend
             docker compose up -d frontend
             docker image prune -f
