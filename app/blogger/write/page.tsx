@@ -156,7 +156,7 @@ const BlogWritingForm = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="relative h-40 sm:h-56 bg-gradient-to-r from-emerald-900 to-emerald-500">
+      <div className="relative h-40  sm:h-56 bg-gradient-to-r from-emerald-900 to-emerald-500">
         <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 text-white text-sm">
           <Edit className="w-4 h-4" />
           <span>{isEditing ? "Edit Blog" : "Write Blog"}</span>
@@ -164,10 +164,10 @@ const BlogWritingForm = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 -mt-16 sm:-mt-20">
+      <div className="max-w-5xl mx-auto  px-4 -mt-16 sm:-mt-20">
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-          <div className="flex flex-col items-center text-center -mt-12 mb-8">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-emerald-900 to-emerald-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-4 border-white">
+          <div className="flex flex-col items-center text-center -mt-4 mb-8">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 z-50 rounded-full bg-gradient-to-br from-emerald-900 to-emerald-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-4 border-white">
               <PenTool className="w-10 h-10" />
             </div>
             <h1 className="mt-3 text-2xl sm:text-3xl font-bold text-slate-900">
@@ -180,7 +180,7 @@ const BlogWritingForm = () => {
 
           <form onSubmit={handleSubmit}>
             {/* Content Classification */}
-            <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="mb-8 p-6 bg-slate-50 rounded-xl border  border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-emerald-900" /> Content Classification
               </h2>

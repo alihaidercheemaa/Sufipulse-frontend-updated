@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu, X, User2, ArrowLeft, Bell, Mail, PenTool, BookOpen } from "lucide-react";
+import { LayoutDashboard, Menu, X, User2, ArrowLeft, Bell, Mail, PenTool, BookOpen, FileText, Calendar, MessageCircle, Tag, Settings, HelpCircle, Clock, BarChart3 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
 import NotificationDropdown from "./NotficationDropdown";
@@ -72,7 +72,23 @@ const BloggerDashboardLayout = ({ children }: { children: React.ReactNode }) => 
     return <BloggerRegistrationForm onRegistrationComplete={handleRegistrationComplete} />
   }
 
+  const showHeader = !pathname.includes("/settings") && !pathname.includes("/help")
+
   const navigation = [
+    // Dashboard Section
+    {
+      name: "Dashboard",
+      href: "/blogger/dashboard",
+      icon: LayoutDashboard,
+      current: pathname === "/blogger/dashboard",
+    },
+    {
+      name: "Analytics",
+      href: "/blogger/analytics",
+      icon: BarChart3,
+      current: pathname === "/blogger/analytics",
+    },
+    // Content Section
     {
       name: "Write Blog",
       href: "/blogger/write",
@@ -81,16 +97,54 @@ const BloggerDashboardLayout = ({ children }: { children: React.ReactNode }) => 
     },
     {
       name: "My Blogs",
-      href: "/blogger/dashboard",
+      href: "/blogger/my-blogs",
       icon: BookOpen,
-      current: pathname === "/blogger/dashboard",
+      current: pathname === "/blogger/my-blogs" || pathname.startsWith("/blogger/blog/"),
     },
+    {
+      name: "Drafts",
+      href: "/blogger/drafts",
+      icon: Clock,
+      current: pathname === "/blogger/drafts",
+    },
+    {
+      name: "Scheduled",
+      href: "/blogger/scheduled",
+      icon: Calendar,
+      current: pathname === "/blogger/scheduled",
+    },
+    // Engagement Section
+    {
+      name: "Comments",
+      href: "/blogger/comments",
+      icon: MessageCircle,
+      current: pathname === "/blogger/comments",
+    },
+    {
+      name: "Categories",
+      href: "/blogger/categories",
+      icon: Tag,
+      current: pathname === "/blogger/categories",
+    },
+    // Profile Section
     {
       name: "Profile",
       href: "/blogger/profile",
       icon: User2,
       current: pathname === "/blogger/profile",
-    }
+    },
+    {
+      name: "Settings",
+      href: "/blogger/settings",
+      icon: Settings,
+      current: pathname === "/blogger/settings",
+    },
+    {
+      name: "Help",
+      href: "/blogger/help",
+      icon: HelpCircle,
+      current: pathname === "/blogger/help",
+    },
   ];
 
   return (
@@ -164,7 +218,8 @@ const BloggerDashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
       {/* Main Content */}
       <div>
-        <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
+        {showHeader && (
+          <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
           <div className="flex items-center justify-between">
             {/* Left side: Sidebar toggle + Back button + Heading */}
             <div className="flex items-center space-x-3 sm:space-x-4">
@@ -193,14 +248,20 @@ const BloggerDashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 {/* Heading + Subtext */}
                 <div>
                   <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
-                    {pathname === "/blogger/write" ? "Write Blog" : 
-                     pathname === "/blogger/profile" ? "Edit Profile" : 
-                     "My Blogs"}
+                    {pathname === "/blogger/dashboard" ? "Dashboard" :
+                     pathname === "/blogger/write" ? "Write Blog" :
+                     pathname === "/blogger/my-blogs" ? "My Blogs" :
+                     pathname === "/blogger/profile" ? "Profile" :
+                     pathname.startsWith("/blogger/blog/") ? "Blog Details" :
+                     "Blogger Dashboard"}
                   </h2>
                   <p className="hidden lg:flex text-xs sm:text-sm text-slate-600">
-                    {pathname === "/blogger/write" ? "Write a new blog post for review" : 
-                     pathname === "/blogger/profile" ? "Update your profile information" : 
-                     "Manage your submitted blogs"}
+                    {pathname === "/blogger/dashboard" ? "Overview of your blog content" :
+                     pathname === "/blogger/write" ? "Write a new blog post for review" :
+                     pathname === "/blogger/my-blogs" ? "Manage and track your blog posts" :
+                     pathname === "/blogger/profile" ? "Update your profile information" :
+                     pathname.startsWith("/blogger/blog/") ? "View and edit blog details" :
+                     "Manage your blogger activities"}
                   </p>
                 </div>
               </div>
@@ -217,6 +278,7 @@ const BloggerDashboardLayout = ({ children }: { children: React.ReactNode }) => 
             </div>
           </div>
         </header>
+        )}
 
         <main className="p-4 sm:p-6 lg:p-8 lg:ml-64">{children}</main>
       </div>

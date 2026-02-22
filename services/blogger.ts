@@ -68,11 +68,98 @@ export const updateBlogPost = (blogId: number, data: any) => {
 export const uploadBlogImage = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   return api.post(`/bloggers/upload-image`, formData, {
     headers: {
       requiresAuth: true,
       'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+// ==================== BLOG ENGAGEMENT SERVICES ====================
+
+export const getBlogEngagementStats = (blogId: number) => {
+  return api.get(`/public/blogs/${blogId}/engagement`, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const getBlogComments = (blogId: number, page = 1, limit = 10) => {
+  return api.get(`/public/blogs/${blogId}/comments?page=${page}&limit=${limit}`, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const submitBlogComment = (blogId: number, data: {
+  commenter_name: string;
+  commenter_email: string;
+  comment_text: string;
+  parent_id?: number;
+}) => {
+  return api.post(`/public/blogs/${blogId}/comments`, data, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const likeBlog = (blogId: number) => {
+  return api.post(`/public/blogs/${blogId}/like`, {}, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const trackBlogView = (blogId: number) => {
+  return api.post(`/public/blogs/${blogId}/view`, {}, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const shareBlog = (blogId: number, platform: string) => {
+  return api.post(`/public/blogs/${blogId}/share`, { platform }, {
+    headers: {
+      requiresAuth: false,
+    },
+  });
+};
+
+export const approveBlogComment = (commentId: number) => {
+  return api.post(`/public/comments/${commentId}/approve`, {}, {
+    headers: {
+      requiresAuth: true,
+    },
+  });
+};
+
+export const rejectBlogComment = (commentId: number) => {
+  return api.post(`/public/comments/${commentId}/reject`, {}, {
+    headers: {
+      requiresAuth: true,
+    },
+  });
+};
+
+export const deleteBlogComment = (commentId: number) => {
+  return api.delete(`/public/comments/${commentId}`, {
+    headers: {
+      requiresAuth: true,
+    },
+  });
+};
+
+export const getMyBlogComments = () => {
+  return api.get(`/bloggers/my-comments`, {
+    headers: {
+      requiresAuth: true,
     },
   });
 };

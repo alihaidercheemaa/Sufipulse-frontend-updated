@@ -1,23 +1,26 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { 
-  FileText, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
-  Eye, 
-  BarChart3, 
-  Users, 
-  Quote, 
-  Clock, 
+import {
+  FileText,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Eye,
+  BarChart3,
+  Users,
+  Quote,
+  Clock,
   MapPin,
   TrendingUp,
-  Activity
+  Activity,
+  CheckCircle,
+  XCircle
 } from "lucide-react"
 import Link from "next/link"
 import { adminGetAllPages, adminDeletePage, getPageData } from "@/services/cms"
+import { SectionHeader, SearchBar, EmptyState, LoadingState, GridCard, StatusBadge } from "@/components/ui"
 
 interface CMSPage {
   id: number
@@ -58,7 +61,7 @@ export default function CMSPagesPage() {
 
     try {
       await adminDeletePage(pageId)
-      setPages(pages.filter(p => p.id !== pageId))
+      setPages(pages.filter((p) => p.id !== pageId))
       alert("Page deleted successfully")
     } catch (error: any) {
       alert(error.response?.data?.detail || "Failed to delete page")
@@ -76,258 +79,225 @@ export default function CMSPagesPage() {
     }
   }
 
-  const filteredPages = pages.filter(page =>
-    page.page_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    page.page_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    page.page_slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPages = pages.filter(
+    (page) =>
+      page.page_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      page.page_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      page.page_slug.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive 
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200" 
-      : "bg-slate-100 text-slate-700 border-slate-200"
-  }
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-emerald-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading CMS pages...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState message="Loading CMS pages..." />
   }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-3">
-              <FileText className="w-8 h-8 text-emerald-600" />
-              CMS Pages Management
-            </h1>
-            <p className="text-slate-600 mt-2 text-sm sm:text-base">
-              Manage website page content, stats, values, team members, and more
-            </p>
-          </div>
+      <SectionHeader
+        title="CMS Pages Management"
+        description="Manage website page content, stats, values, team members, and more"
+        icon={<FileText className="w-6 h-6" />}
+        action={
           <Link
             href="/admin/cms/new"
-            className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add New Page
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <GridCard hover={false} className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Total Pages</p>
-              <p className="text-3xl font-bold text-slate-900 mt-1">{pages.length}</p>
+              <p className="text-sm font-medium text-emerald-700">Total Pages</p>
+              <p className="text-3xl font-bold text-emerald-900 mt-1">{pages.length}</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-emerald-600" />
+            <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+              <FileText className="w-6 h-6 text-white" />
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+        </GridCard>
+        <GridCard hover={false} className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Active Pages</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-1">
-                {pages.filter(p => p.is_active).length}
+              <p className="text-sm font-medium text-blue-700">Active Pages</p>
+              <p className="text-3xl font-bold text-blue-900 mt-1">
+                {pages.filter((p) => p.is_active).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+              <Activity className="w-6 h-6 text-white" />
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+        </GridCard>
+        <GridCard hover={false} className="bg-gradient-to-br from-slate-50 to-slate-100/50 border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Inactive Pages</p>
-              <p className="text-3xl font-bold text-slate-600 mt-1">
-                {pages.filter(p => !p.is_active).length}
+              <p className="text-sm font-medium text-slate-700">Inactive Pages</p>
+              <p className="text-3xl font-bold text-slate-900 mt-1">
+                {pages.filter((p) => !p.is_active).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-slate-600" />
+            <div className="w-12 h-12 bg-slate-500 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+        </GridCard>
+        <GridCard hover={false} className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Content Types</p>
-              <p className="text-3xl font-bold text-purple-600 mt-1">7</p>
+              <p className="text-sm font-medium text-purple-700">Content Types</p>
+              <p className="text-3xl font-bold text-purple-900 mt-1">7</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
           </div>
-        </div>
+        </GridCard>
       </div>
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search pages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
-        </div>
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search pages by name, title, or slug..."
+          className="max-w-md"
+        />
       </div>
 
-      {/* Pages Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Page Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Last Updated
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredPages.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 text-lg font-medium">No pages found</p>
-                    <p className="text-slate-400 text-sm mt-1">
-                      {searchQuery ? "Try adjusting your search" : "Create your first page to get started"}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredPages.map((page) => (
-                  <tr key={page.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
-                          <FileText className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <span className="font-semibold text-slate-900">{page.page_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-slate-600">{page.page_title}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <code className="text-sm bg-slate-100 px-2 py-1 rounded text-slate-600">
-                        /{page.page_slug}
-                      </code>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(page.is_active)}`}>
-                        {page.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-sm text-slate-500">
-                        <Clock className="w-4 h-4 mr-2" />
-                        {new Date(page.updated_at).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleViewPage(page.page_slug)}
-                          className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View Data"
-                        >
-                          <Eye className="w-4 h-4 text-blue-600" />
-                        </button>
-                        <Link
-                          href={`/admin/cms/edit/${page.id}`}
-                          className="p-2 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="Edit Page"
-                        >
-                          <Edit className="w-4 h-4 text-emerald-600" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(page.id)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete Page"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Pages Grid */}
+      {filteredPages.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredPages.map((page) => (
+            <GridCard key={page.id} className="group">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                      {page.page_name}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                        page.is_active
+                          ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                          : "bg-slate-100 text-slate-700 border-slate-200"
+                      }`}
+                    >
+                      {page.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm mb-4">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <span className="text-slate-500 font-medium">Title:</span>
+                  <span className="truncate">{page.page_title}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <span className="text-slate-500 font-medium">Slug:</span>
+                  <code className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{page.page_slug}</code>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <span>Updated: {new Date(page.updated_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleViewPage(page.page_slug)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Data
+                </button>
+                <Link
+                  href={`/admin/cms/edit/${page.id}`}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={() => handleDelete(page.id)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </GridCard>
+          ))}
         </div>
-      </div>
+      ) : (
+        <GridCard hover={false}>
+          <EmptyState
+            icon={<FileText className="w-8 h-8" />}
+            title={searchQuery ? "No pages found" : "No CMS pages yet"}
+            description={
+              searchQuery
+                ? "Try adjusting your search terms"
+                : "Create your first page to get started"
+            }
+            action={
+              <Link
+                href="/admin/cms/new"
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Create Page
+              </Link>
+            }
+          />
+        </GridCard>
+      )}
 
       {/* Content Types Info */}
-      <div className="mt-8 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-100">
+      <GridCard hover={false} className="mt-6 bg-gradient-to-br from-emerald-50 to-blue-50 border-emerald-100">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-emerald-600" />
           Manage Page Content Types
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <BarChart3 className="w-6 h-6 text-emerald-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Statistics</p>
             <p className="text-xs text-slate-500 mt-1">Numbers & metrics</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <TrendingUp className="w-6 h-6 text-blue-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Values</p>
             <p className="text-xs text-slate-500 mt-1">Core principles</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <Users className="w-6 h-6 text-purple-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Team</p>
             <p className="text-xs text-slate-500 mt-1">Members & bios</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <Clock className="w-6 h-6 text-orange-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Timeline</p>
             <p className="text-xs text-slate-500 mt-1">Milestones</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <Quote className="w-6 h-6 text-pink-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Testimonials</p>
             <p className="text-xs text-slate-500 mt-1">Quotes & reviews</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <MapPin className="w-6 h-6 text-teal-600 mb-2" />
             <p className="text-sm font-semibold text-slate-800">Hubs</p>
             <p className="text-xs text-slate-500 mt-1">Locations</p>
           </div>
         </div>
-      </div>
+      </GridCard>
     </div>
   )
 }

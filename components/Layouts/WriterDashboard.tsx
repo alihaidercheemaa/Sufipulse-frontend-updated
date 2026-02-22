@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type React from "react"
-import { PenTool, BookOpen, Menu, X, User2, ArrowLeft, Bell, Mail } from "lucide-react"
+import { LayoutDashboard, PenTool, BookOpen, Menu, X, User2, ArrowLeft, Bell, Mail, BarChart3, Star, Palette, Settings, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Cookies from "js-cookie"
@@ -10,9 +10,7 @@ import { useAuth } from "@/context/AuthContext"
 import NotificationDropdown from "./NotficationDropdown"
 import { checkWriterRegistration } from "@/services/writer"
 import WriterRegistrationForm from "../pages/WriterRegistrationForm"
-import { i } from "framer-motion/m"
 import { BiLogIn } from "react-icons/bi"
-import Cookie from "js-cookie"
 
 interface WriterDashboardLayoutProps {
   children: React.ReactNode
@@ -74,7 +72,23 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
     return <WriterRegistrationForm onRegistrationComplete={handleRegistrationComplete} />
   }
 
+  const showHeader = !pathname.includes("/settings") && !pathname.includes("/help")
+
   const navigation = [
+    // Dashboard Section
+    {
+      name: "Dashboard",
+      href: "/writer/dashboard",
+      icon: LayoutDashboard,
+      current: pathname === "/writer/dashboard",
+    },
+    {
+      name: "Analytics",
+      href: "/writer/analytics",
+      icon: BarChart3,
+      current: pathname === "/writer/analytics",
+    },
+    // Content Section
     {
       name: "Submit Kalam",
       href: "/writer/submit",
@@ -88,11 +102,38 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
       current: pathname === "/writer/kalams",
     },
     {
-      name:"Profile",
-      href:"/writer/profile",
-      icon: User2,
-      current:pathname === "/writer/profile",
+      name: "Portfolio",
+      href: "/writer/portfolio",
+      icon: Star,
+      current: pathname === "/writer/portfolio",
     },
+    // Preferences Section
+    {
+      name: "Writing Styles",
+      href: "/writer/styles",
+      icon: Palette,
+      current: pathname === "/writer/styles",
+    },
+    // Profile Section
+    {
+      name: "Profile",
+      href: "/writer/profile",
+      icon: User2,
+      current: pathname === "/writer/profile",
+    },
+    {
+      name: "Settings",
+      href: "/writer/settings",
+      icon: Settings,
+      current: pathname === "/writer/settings",
+    },
+    {
+      name: "Help",
+      href: "/writer/help",
+      icon: HelpCircle,
+      current: pathname === "/writer/help",
+    },
+    // Existing items
     {
       name: "Blogs",
       href: "/writer/blog",
@@ -100,11 +141,11 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
       current: pathname === "/writer/blog",
     },
     {
-      name:'Notifications',
-      href:'/writer/notification',
+      name: "Notifications",
+      href: "/writer/notification",
       icon: Bell,
-      current : pathname === '/writer/notification',
-    }
+      current: pathname === "/writer/notification",
+    },
   ]
 
   return (
@@ -178,7 +219,8 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
 
       {/* Main Content */}
       <div>
-        <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
+        {showHeader && (
+          <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
           <div className="flex items-center justify-between">
             {/* Left side: Sidebar toggle + Back button + Heading */}
             <div className="flex items-center space-x-3 sm:space-x-4">
@@ -207,10 +249,22 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
                 {/* Heading + Subtext */}
                 <div>
                   <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
-                    {pathname === "/writer/submit" ? "Submit Kalam" : "My Kalams"}
+                    {pathname === "/writer/dashboard" ? "Dashboard" :
+                     pathname === "/writer/submit" ? "Submit Kalam" :
+                     pathname === "/writer/kalams" ? "My Kalams" :
+                     pathname === "/writer/profile" ? "Profile" :
+                     pathname === "/writer/blog" ? "Blogs" :
+                     pathname === "/writer/notification" ? "Notifications" :
+                     "Writer Dashboard"}
                   </h2>
                   <p className="hidden lg:flex text-xs sm:text-sm text-slate-600">
-                    {pathname === "/writer/submit" ? "Submit a new kalam for review" : "Manage your submitted kalams"}
+                    {pathname === "/writer/dashboard" ? "Overview of your sacred poetry journey" :
+                     pathname === "/writer/submit" ? "Submit a new kalam for review" :
+                     pathname === "/writer/kalams" ? "Manage your submitted kalams" :
+                     pathname === "/writer/profile" ? "View and edit your profile" :
+                     pathname === "/writer/blog" ? "Read and write blogs" :
+                     pathname === "/writer/notification" ? "View your notifications" :
+                     "Manage your writer activities"}
                   </p>
                 </div>
               </div>
@@ -227,6 +281,7 @@ const WriterDashboardLayout: React.FC<WriterDashboardLayoutProps> = ({ children 
             </div>
           </div>
         </header>
+        )}
 
         <main className="p-4 sm:p-6 lg:p-8 lg:ml-64">{children}</main>
       </div>

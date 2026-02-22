@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { getAllWriters } from "@/services/admin"
+import { SectionHeader, SearchBar, EmptyState, LoadingState, GridCard } from "@/components/ui"
+import { FileText, Users, Mail, MapPin, ChevronRight, UserPlus, PenTool } from "lucide-react"
 
 interface Writer {
   id: number
@@ -22,13 +24,11 @@ export default function WritersPage() {
   useEffect(() => {
     const fetchWriters = async () => {
       try {
-        console.log("[v0] Fetching writers...")
         const response = await getAllWriters()
-        console.log("[v0] Writers response:", response.data)
         setWriters(response.data?.writers || [])
         setFilteredWriters(response.data?.writers || [])
       } catch (error) {
-        console.error("[v0] Error fetching writers:", error)
+        console.error("Error fetching writers:", error)
       } finally {
         setLoading(false)
       }
@@ -38,12 +38,13 @@ export default function WritersPage() {
   }, [])
 
   useEffect(() => {
-    const filtered = writers.filter(writer =>
-      writer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      writer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      writer.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (writer.city && writer.city.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (writer.country && writer.country.toLowerCase().includes(searchQuery.toLowerCase()))
+    const filtered = writers.filter(
+      (writer) =>
+        writer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        writer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        writer.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (writer.city && writer.city.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (writer.country && writer.country.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     setFilteredWriters(filtered)
   }, [searchQuery, writers])
@@ -51,85 +52,164 @@ export default function WritersPage() {
   const getRoleColor = (role: string) => {
     switch (role.toLowerCase()) {
       case "admin":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800 border-blue-200"
       case "editor":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 border-green-200"
       case "writer":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-amber-100 text-amber-800 border-amber-200"
       default:
-        return "bg-slate-100 text-slate-800"
+        return "bg-slate-100 text-slate-800 border-slate-200"
     }
   }
 
   if (loading) {
-      return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-emerald-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your writers...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading writers..." />
   }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
+      <SectionHeader
+        title="Writers"
+        description={`Manage all ${writers.length} registered writers`}
+        icon={<PenTool className="w-6 h-6" />}
+        action={
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
+              <Users className="w-4 h-4 mr-1.5" />
+              {writers.length} Total
+            </span>
+          </div>
+        }
+      />
+
+      {/* Search Bar */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Writers</h1>
-        <p className="text-slate-600 mt-2 text-sm sm:text-base">Manage all registered writers</p>
-        <div className="mt-4">
-          <input
-            type="text"
-            placeholder="Search by name, email, role, or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full max-w-md px-4 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-900 text-slate-800 placeholder-slate-400"
-          />
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search by name, email, role, or location..."
+          className="max-w-md"
+        />
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <GridCard hover={false} className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
+              <PenTool className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-amber-700">Total Writers</p>
+              <p className="text-2xl font-bold text-amber-900">{writers.length}</p>
+            </div>
+          </div>
+        </GridCard>
+        <GridCard hover={false} className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-blue-700">Admins</p>
+              <p className="text-2xl font-bold text-blue-900">
+                {writers.filter((w) => w.role.toLowerCase() === "admin").length}
+              </p>
+            </div>
+          </div>
+        </GridCard>
+        <GridCard hover={false} className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+              <UserPlus className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-emerald-700">Active</p>
+              <p className="text-2xl font-bold text-emerald-900">
+                {writers.filter((w) => w.role.toLowerCase() !== "admin").length}
+              </p>
+            </div>
+          </div>
+        </GridCard>
+      </div>
+
+      {/* Writers Grid */}
+      {filteredWriters.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredWriters.map((writer) => (
+            <GridCard key={writer.id} className="group">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">
+                      {writer.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {writer.name}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(writer.role)}`}
+                    >
+                      {writer.role}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Mail className="w-4 h-4 text-slate-400" />
+                  <span className="truncate">{writer.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <span>
+                    {writer.city && writer.country
+                      ? `${writer.city}, ${writer.country}`
+                      : "Location not specified"}
+                  </span>
+                </div>
+              </div>
+
+              <Link
+                href={`/admin/writers/${writer.id}`}
+                className="mt-4 flex items-center justify-center w-full py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-sm font-medium transition-all group-hover:bg-blue-600 group-hover:text-white"
+              >
+                View Details
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Link>
+            </GridCard>
+          ))}
         </div>
-      </div>
+      ) : (
+        <GridCard hover={false}>
+          <EmptyState
+            icon={<PenTool className="w-8 h-8" />}
+            title={searchQuery ? "No writers found" : "No writers yet"}
+            description={
+              searchQuery ? "Try adjusting your search terms" : "Registered writers will appear here"
+            }
+          />
+        </GridCard>
+      )}
 
-      {/* Writers Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full bg-white rounded-lg shadow-sm border border-slate-200">
-          <thead>
-            <tr className="bg-slate-50 text-slate-800 text-sm sm:text-base">
-              <th className="py-3 px-4 sm:px-6 text-left font-semibold">Name</th>
-              <th className="py-3 px-4 sm:px-6 text-left font-semibold">Email</th>
-              <th className="py-3 px-4 sm:px-6 text-left font-semibold">Location</th>
-              <th className="py-3 px-4 sm:px-6 text-left font-semibold">Role</th>
-              <th className="py-3 px-4 sm:px-6 text-left font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredWriters.map((writer) => (
-              <tr key={writer.id} className="border-t border-slate-200 hover:bg-slate-50">
-               
-                <td className="py-3 px-4 sm:px-6 text-slate-800 text-sm sm:text-base">{writer.name}</td>
-                <td className="py-3 px-4 sm:px-6 text-slate-800 text-sm sm:text-base">{writer.email}</td>
-                <td className="py-3 px-4 sm:px-6 text-slate-800 text-sm sm:text-base">
-                  {writer.city && writer.country ? `${writer.city}, ${writer.country}` : "Location not specified"}
-                </td>
-                <td className="py-3 px-4 sm:px-6">
-                  <span className={`text-xs px-2 py-1 rounded-full ${getRoleColor(writer.role)}`}>{writer.role}</span>
-                </td>
-                <td className="py-3 px-4 sm:px-6">
-                  <Link
-                    href={`/admin/writers/${writer.id}`}
-                    className="inline-block bg-emerald-900 text-emerald-50 py-1 px-3 rounded-md text-sm font-medium hover:bg-slate-800 transition-colors duration-200"
-                  >
-                    View Details
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredWriters.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-slate-800 text-lg">No writers found</div>
+      {/* Summary */}
+      {filteredWriters.length > 0 && (
+        <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
+          <p>
+            Showing {filteredWriters.length} of {writers.length} writers
+          </p>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       )}
     </div>

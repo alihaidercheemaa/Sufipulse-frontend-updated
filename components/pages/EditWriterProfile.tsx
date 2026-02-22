@@ -37,16 +37,21 @@ const EditWriterProfile: React.FC = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!writerId) {
+        setFormError("Writer ID not found")
+        setLoading(false)
+        return
+      }
       try {
         setLoading(true)
         const response = await getWriterProfile(Number(writerId))
         setFormData({
-          writing_styles: response.data.writing_styles.join(", "),
-          languages: response.data.languages.join(", "),
-          sample_title: response.data.sample_title,
-          experience_background: response.data.experience_background,
-          portfolio: response.data.portfolio,
-          availability: response.data.availability,
+          writing_styles: response.data.writing_styles?.join(", ") || "",
+          languages: response.data.languages?.join(", ") || "",
+          sample_title: response.data.sample_title || "",
+          experience_background: response.data.experience_background || "",
+          portfolio: response.data.portfolio || "",
+          availability: response.data.availability || "",
         })
       } catch (err: any) {
         console.error("Error fetching writer profile:", err)
@@ -113,7 +118,7 @@ const EditWriterProfile: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-slate-900">Edit Writer Profile</h2>
-            <Link to={`/writer/${writerId}`} className="text-slate-800 hover:text-emerald-900">
+            <Link href={`/writer/profile`} className="text-slate-800 hover:text-emerald-900">
               <X className="w-6 h-6" />
             </Link>
           </div>
@@ -203,7 +208,7 @@ const EditWriterProfile: React.FC = () => {
             </div>
             <div className="flex justify-end gap-4">
               <Link
-                to={`/writer/${writerId}`}
+                href={`/writer/profile`}
                 className="px-4 py-2 rounded-lg bg-slate-50 text-slate-800 hover:bg-emerald-50 transition"
               >
                 Cancel

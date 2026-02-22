@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type React from "react";
-import { User, Music, Menu, X, LogOut, User2, ArrowLeft, Bell, Mail, Mic, Wifi } from "lucide-react";
+import { LayoutDashboard, User, Music, Menu, X, LogOut, User2, ArrowLeft, Bell, Mail, Mic, Wifi, BarChart3, Settings, HelpCircle, Users, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { checkVocalistRegistration } from "@/services/vocalist";
@@ -11,7 +11,6 @@ import { useAuth } from "@/context/AuthContext";
 import Cookies from "js-cookie";
 import NotificationDropdown from "./NotficationDropdown";
 import { BiLogIn } from "react-icons/bi";
-import path from "path";
 
 interface VocalistLayoutProps {
   children: React.ReactNode;
@@ -47,14 +46,22 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
   }, []);
 
   const navigation = [
+    // Dashboard Section
     {
-      name: "Profile",
-      href: "/vocalist/profile",
-      icon: User,
-      current: pathname === "/vocalist/profile",
+      name: "Dashboard",
+      href: "/vocalist/dashboard",
+      icon: LayoutDashboard,
+      current: pathname === "/vocalist/dashboard",
     },
     {
-      name: "Kalam",
+      name: "Analytics",
+      href: "/vocalist/analytics",
+      icon: BarChart3,
+      current: pathname === "/vocalist/analytics",
+    },
+    // Recordings Section
+    {
+      name: "Browse Kalams",
       href: "/vocalist/kalam",
       icon: Music,
       current: pathname === "/vocalist/kalam",
@@ -72,6 +79,46 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
       current: pathname === "/vocalist/recording-requests/remote",
     },
     {
+      name: "My Recordings",
+      href: "/vocalist/my-recordings",
+      icon: FileText,
+      current: pathname === "/vocalist/my-recordings",
+    },
+    // Collaborations Section
+    {
+      name: "Collaborations",
+      href: "/vocalist/collaborations",
+      icon: Users,
+      current: pathname === "/vocalist/collaborations",
+    },
+    // Setup Section
+    {
+      name: "Equipment",
+      href: "/vocalist/equipment",
+      icon: Mic,
+      current: pathname === "/vocalist/equipment",
+    },
+    // Profile Section
+    {
+      name: "Profile",
+      href: "/vocalist/profile",
+      icon: User,
+      current: pathname === "/vocalist/profile",
+    },
+    {
+      name: "Settings",
+      href: "/vocalist/settings",
+      icon: Settings,
+      current: pathname === "/vocalist/settings",
+    },
+    {
+      name: "Help",
+      href: "/vocalist/help",
+      icon: HelpCircle,
+      current: pathname === "/vocalist/help",
+    },
+    // Existing items
+    {
       name: "Blog",
       href: "/vocalist/blog",
       icon: BiLogIn,
@@ -79,10 +126,10 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
     },
     {
       name: "Notifications",
-      href:"/vocalist/notification",
-      icon : Bell,
+      href: "/vocalist/notification",
+      icon: Bell,
       current: pathname === "/vocalist/notification",
-    }
+    },
   ];
 
   // Loader component
@@ -176,7 +223,9 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <div>
-        <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
+        {/* Hide header on settings and help pages */}
+        {!pathname.includes("/settings") && !pathname.includes("/help") && (
+          <header className="bg-white shadow-sm border-b border-slate-200 px-4 sm:px-6 py-4 lg:ml-64">
           <div className="flex items-center justify-between">
             {/* Left section: Sidebar toggle + Back button + Heading */}
             <div className="flex items-center space-x-3 sm:space-x-4">
@@ -207,19 +256,31 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
               {/* Heading + Subtext */}
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
-                  {pathname === "/vocalist/profile" ? "Profile" : 
+                  {pathname === "/vocalist/dashboard" ? "Dashboard" :
+                   pathname === "/vocalist/profile" ? "Profile" :
+                   pathname === "/vocalist/kalam" ? "Kalam Management" :
                    pathname === "/vocalist/recording-requests/studio" ? "Studio Recording Request" :
                    pathname === "/vocalist/recording-requests/remote" ? "Remote Recording Request" :
-                   "Kalam Management"}
+                   pathname === "/vocalist/blog" ? "Blog" :
+                   pathname === "/vocalist/notification" ? "Notifications" :
+                   "Vocalist Dashboard"}
                 </h2>
                 <p className="hidden sm:flex text-xs sm:text-sm text-slate-600">
-                  {pathname === "/vocalist/profile"
+                  {pathname === "/vocalist/dashboard"
+                    ? "Overview of your vocal collaborations"
+                    : pathname === "/vocalist/profile"
                     ? "View your vocalist profile and kalams"
+                    : pathname === "/vocalist/kalam"
+                    ? "Manage kalam approvals and recording requests"
                     : pathname === "/vocalist/recording-requests/studio"
                     ? "Request in-person studio sessions for approved lyrics"
                     : pathname === "/vocalist/recording-requests/remote"
                     ? "Request remote production for approved lyrics"
-                    : "Manage kalam approvals and recording requests"}
+                    : pathname === "/vocalist/blog"
+                    ? "Read and write blogs"
+                    : pathname === "/vocalist/notification"
+                    ? "View your notifications"
+                    : "Manage your vocalist activities"}
                 </p>
               </div>
             </div>
@@ -239,6 +300,7 @@ const VocalistLayout: React.FC<VocalistLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
+        )}
 
         <main className="p-4 sm:p-6 lg:p-8 lg:ml-64">{children}</main>
       </div>

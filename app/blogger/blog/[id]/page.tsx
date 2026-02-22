@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { getBlogSubmissionById } from '@/services/blogger';
+import { getBlogSubmissionById, getBlogEngagementStats } from '@/services/blogger';
 import {
   ArrowLeft,
   Calendar,
@@ -17,14 +17,22 @@ import {
   Clock,
   XCircle,
   AlertCircle,
+  Eye,
+  Heart,
+  MessageCircle,
+  Share2,
+  TrendingUp,
 } from 'lucide-react';
+import { EngagementMetrics, ShareButtons, CommentList } from '@/components/ui';
 
 const BlogView = () => {
   const router = useRouter();
   const params = useParams();
   const blogId = params.id as string;
-  
+
   const [blog, setBlog] = useState<any>(null);
+  const [engagement, setEngagement] = useState({ views: 0, likes: 0, comments: 0, shares: 0 });
+  const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,12 +43,27 @@ const BlogView = () => {
 
   const fetchBlog = async () => {
     try {
-      const response = await getBlogSubmissionById(Number(blogId));
-      if (response.status === 200) {
-        setBlog(response.data);
+      const [blogResponse, engagementResponse, commentsResponse] = await Promise.all([
+        getBlogSubmissionById(Number(blogId)),
+        getBlogEngagementStats(Number(blogId)),
+        // Comments will be fetched separately if needed
+      ]);
+      
+      if (blogResponse.status === 200) {
+        setBlog(blogResponse.data);
       } else {
         toast.error('Failed to load blog details');
         router.push('/blogger/dashboard');
+        return;
+      }
+      
+      if (engagementResponse.status === 200) {
+        setEngagement({
+          views: engagementResponse.data.views || 0,
+          likes: engagementResponse.data.likes || 0,
+          comments: engagementResponse.data.comments || 0,
+          shares: engagementResponse.data.shares || 0,
+        });
       }
     } catch (error) {
       console.error('Error fetching blog:', error);
@@ -167,7 +190,7 @@ const BlogView = () => {
             </h1>
 
             {/* Meta Information */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 pb-8 border-b border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-slate-200">
               <div className="flex items-center space-x-3 text-slate-600">
                 <Calendar className="w-5 h-5 text-emerald-600" />
                 <div>
@@ -198,6 +221,35 @@ const BlogView = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Engagement Metrics */}
+            <div className="mb-8 p-4 bg-gradient-to-r from-slate-50 to-emerald-50 rounded-xl border border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                Engagement Metrics
+              </h3>
+              <EngagementMetrics
+                views={engagement.views}
+                likes={engagement.likes}
+                comments={engagement.comments}
+                shares={engagement.shares}
+                size="lg"
+                showLabels={true}
+              />
+            </div>
+
+            {/* Share Buttons */}
+            <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-emerald-600" />
+                Share This Blog
+              </h3>
+              <ShareButtons
+                url={typeof window !== 'undefined' ? window.location.href : ''}
+                title={blog.title}
+                layout="horizontal"
+              />
             </div>
 
             {/* Excerpt */}

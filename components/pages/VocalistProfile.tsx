@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from "react";
 import { User, Globe, Award, MapPin, Mic, Clock, Calendar, Edit } from "lucide-react";
-import Link from "next/link";
 import { getVocalistProfile } from "@/services/vocalist";
 
 interface VocalistProfileData {
@@ -22,7 +21,11 @@ interface VocalistProfileData {
   city: string;
 }
 
-const VocalistProfile = () => {
+interface VocalistProfileProps {
+  onEditClick?: () => void;
+}
+
+const VocalistProfile = ({ onEditClick }: VocalistProfileProps) => {
   const [profileData, setProfileData] = useState<VocalistProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,13 +83,13 @@ const VocalistProfile = () => {
     <div className="min-h-screen bg-slate-50">
       {/* Hero Header */}
       <div className="relative h-40 sm:h-48 md:h-56 lg:h-64 bg-gradient-to-r from-emerald-900 to-emerald-500">
-        <Link
-          href={`/vocalist/${profileData?.vocalist_id}/EditVocalistProfile`}
+        <button
+          onClick={onEditClick}
           className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition text-sm sm:text-base"
         >
           <Edit className="w-3 sm:w-4 h-3 sm:h-4" />
           <span>Edit</span>
-        </Link>
+        </button>
       </div>
 
       {/* Profile Card */}
