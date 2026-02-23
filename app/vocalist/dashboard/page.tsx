@@ -24,10 +24,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { getKalamsByVocalist } from "@/services/vocalist"
-import {
-  getStudioVisitRequestsByVocalist,
-  getRemoteRecordingRequestsByVocalist,
-} from "@/services/requests"
+import { getMyStudioRequests, getMyRemoteRequests } from "@/services/recordingRequests"
 import {
   MetricCard,
   DashboardCard,
@@ -61,12 +58,13 @@ interface Kalam {
 
 interface RecordingRequest {
   id: number
-  kalam_id: number
   vocalist_id: number
+  kalam_id: number
+  lyric_title: string
   status: string
   created_at: string
-  preferred_date?: string
-  preferred_time?: string
+  preferred_session_date?: string
+  preferred_time_block?: string
 }
 
 interface DashboardStats {
@@ -93,15 +91,31 @@ export default function VocalistDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        console.log("🔄 Fetching vocalist dashboard data...")
+        
         const [kalamsRes, studioRes, remoteRes] = await Promise.all([
           getKalamsByVocalist(),
-          getStudioVisitRequestsByVocalist(),
-          getRemoteRecordingRequestsByVocalist(),
+          getMyStudioRequests(),
+          getMyRemoteRequests(),
         ])
 
+        console.log("📦 Kalams Response:", kalamsRes)
+        console.log("📦 Kalams Data:", kalamsRes.data)
+        console.log("📦 Studio Requests Response:", studioRes)
+        console.log("📦 Studio Requests Data:", studioRes.data)
+        console.log("📦 Remote Requests Response:", remoteRes)
+        console.log("📦 Remote Requests Data:", remoteRes.data)
+
         const kalams: Kalam[] = kalamsRes.data.kalams || []
-        const studioRequests: RecordingRequest[] = studioRes.data || []
-        const remoteRequests: RecordingRequest[] = remoteRes.data || []
+        const studioRequests: RecordingRequest[] = studioRes.data.requests || []
+        const remoteRequests: RecordingRequest[] = remoteRes.data.requests || []
+
+        console.log("✅ Parsed Kalams:", kalams)
+        console.log("✅ Parsed Studio Requests:", studioRequests)
+        console.log("✅ Parsed Remote Requests:", remoteRequests)
+        console.log("✅ Kalams Count:", kalams.length)
+        console.log("✅ Studio Requests Count:", studioRequests.length)
+        console.log("✅ Remote Requests Count:", remoteRequests.length)
 
         setRecentKalams(kalams.slice(0, 5))
 
@@ -112,6 +126,8 @@ export default function VocalistDashboard() {
         ).length
         const published = kalams.filter((k) => k.status === "posted" || k.published_at !== null).length
 
+        console.log("📊 Stats:", { total, pending, approved, published, studioRequests: studioRequests.length, remoteRequests: remoteRequests.length })
+
         setStats({
           totalCollaborations: total,
           pendingApproval: pending,
@@ -121,7 +137,7 @@ export default function VocalistDashboard() {
           remoteRequests: remoteRequests.length,
         })
       } catch (error) {
-        console.error("Error fetching dashboard data:", error)
+        console.error("❌ Error fetching dashboard data:", error)
       } finally {
         setLoading(false)
       }

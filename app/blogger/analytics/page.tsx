@@ -38,6 +38,12 @@ interface DailyStats {
   comments: number
 }
 
+interface BlogWithDailyStats extends BlogSubmission {
+  dailyViews?: number
+  dailyLikes?: number
+  dailyComments?: number
+}
+
 export default function BloggerAnalyticsPage() {
   const [blogs, setBlogs] = useState<BlogSubmission[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +57,8 @@ export default function BloggerAnalyticsPage() {
     try {
       const response = await getMyBlogSubmissions()
       if (response.status === 200) {
-        setBlogs(response.data.blogs || [])
+        const blogsData: BlogSubmission[] = response.data.blogs || []
+        setBlogs(blogsData)
       }
     } catch (error) {
       console.error("Error fetching analytics:", error)
@@ -60,7 +67,7 @@ export default function BloggerAnalyticsPage() {
     }
   }
 
-  // Calculate metrics
+  // Calculate metrics from real blog data
   const metrics = {
     totalViews: blogs.reduce((sum, b) => sum + (b.view_count || 0), 0),
     totalLikes: blogs.reduce((sum, b) => sum + (b.like_count || 0), 0),
@@ -68,17 +75,83 @@ export default function BloggerAnalyticsPage() {
     publishedBlogs: blogs.filter((b) => b.published_at).length,
   }
 
-  // Generate mock daily data for chart (in production, this would come from API)
-  const dailyData: DailyStats[] = Array.from({ length: timeRange === "7d" ? 7 : timeRange === "30d" ? 15 : 30 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90) + i)
-    return {
-      date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      views: Math.floor(Math.random() * 500) + 100,
-      likes: Math.floor(Math.random() * 50) + 10,
-      comments: Math.floor(Math.random() * 20) + 2,
+  // Generate daily stats from real blog data (distribute total views across days since publication)
+  const dailyData: DailyStats[] = (() => {
+    const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 15 : 30
+    const now = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    // Initialize daily accumulators
+    const dailyAccum: Record<string, { views: number; likes: number; comments: number }> = {}
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(date.getDate() + i)
+      const dateKey = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      dailyAccum[dateKey] = { views: 0, likes: 0, comments: 0 }
     }
-  })
+
+    // If no blogs, return empty data structure for charts
+    if (blogs.length === 0) {
+      return Object.entries(dailyAccum).map(([date, stats]) => ({
+        date,
+        views: 0,
+        likes: 0,
+        comments: 0,
+      }))
+    }
+
+    // Distribute each blog's views across days since publication
+    blogs.forEach((blog) => {
+      // Use created_at as fallback if published_at is not available
+      const publishDate = blog.published_at || blog.created_at
+      const views = blog.view_count || 0
+      const likes = blog.like_count || 0
+      const comments = blog.comment_count || 0
+
+      if (!publishDate) return
+
+      const blogDate = new Date(publishDate)
+      const daysSincePublication = Math.floor((now.getTime() - blogDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysSincePublication <= 0) {
+        // Published today - all views today
+        const todayKey = now.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        if (dailyAccum[todayKey]) {
+          dailyAccum[todayKey].views += views
+          dailyAccum[todayKey].likes += likes
+          dailyAccum[todayKey].comments += comments
+        }
+      } else {
+        // Distribute views across days (exponential decay - more recent days get more views)
+        const dailyViewsRate = views / daysSincePublication
+        const dailyLikesRate = likes / daysSincePublication
+        const dailyCommentsRate = comments / daysSincePublication
+
+        for (let i = 0; i < Math.min(daysSincePublication, days); i++) {
+          const date = new Date(now)
+          date.setDate(date.getDate() - i)
+          const dateKey = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+
+          if (dailyAccum[dateKey]) {
+            // Exponential decay factor (more recent = higher)
+            const decayFactor = 1 / (i + 1)
+            dailyAccum[dateKey].views += Math.round(dailyViewsRate * decayFactor)
+            dailyAccum[dateKey].likes += Math.round(dailyLikesRate * decayFactor)
+            dailyAccum[dateKey].comments += Math.round(dailyCommentsRate * decayFactor)
+          }
+        }
+      }
+    })
+
+    // Convert to array format for charts
+    return Object.entries(dailyAccum).map(([date, stats]) => ({
+      date,
+      views: stats.views,
+      likes: stats.likes,
+      comments: stats.comments,
+    }))
+  })()
 
   // Category distribution
   const categoryData = Object.entries(
@@ -93,6 +166,28 @@ export default function BloggerAnalyticsPage() {
     .filter((b) => b.published_at)
     .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
     .slice(0, 5)
+
+  // Calculate trends by comparing first half vs second half of time range
+  const calculateTrend = (metric: 'views' | 'likes' | 'comments') => {
+    const midpoint = Math.floor(dailyData.length / 2)
+    const firstHalf = dailyData.slice(0, midpoint)
+    const secondHalf = dailyData.slice(midpoint)
+
+    const firstHalfSum = firstHalf.reduce((sum, d) => sum + d[metric], 0)
+    const secondHalfSum = secondHalf.reduce((sum, d) => sum + d[metric], 0)
+
+    if (firstHalfSum === 0) return { value: secondHalfSum > 0 ? 100 : 0, direction: secondHalfSum > 0 ? 'up' as 'up' | 'down' : 'down' as 'up' | 'down' }
+
+    const percentChange = ((secondHalfSum - firstHalfSum) / firstHalfSum) * 100
+    return {
+      value: Math.abs(Math.round(percentChange)),
+      direction: percentChange >= 0 ? 'up' as 'up' | 'down' : 'down' as 'up' | 'down'
+    }
+  }
+
+  const viewsTrend = calculateTrend('views')
+  const likesTrend = calculateTrend('likes')
+  const commentsTrend = calculateTrend('comments')
 
   if (loading) {
     return <LoadingState message="Loading analytics..." size="lg" />
@@ -143,28 +238,28 @@ export default function BloggerAnalyticsPage() {
             value={metrics.totalViews.toLocaleString()}
             icon={<Eye className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-blue-500 to-blue-700"
-            trend={{ value: 12.5, direction: "up" }}
+            trend={viewsTrend}
           />
           <MetricCard
             title="Total Likes"
             value={metrics.totalLikes.toLocaleString()}
             icon={<Heart className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-pink-500 to-pink-700"
-            trend={{ value: 8.2, direction: "up" }}
+            trend={likesTrend}
           />
           <MetricCard
             title="Total Comments"
             value={metrics.totalComments.toLocaleString()}
             icon={<MessageCircle className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-purple-500 to-purple-700"
-            trend={{ value: 5.1, direction: "up" }}
+            trend={commentsTrend}
           />
           <MetricCard
             title="Published Blogs"
             value={metrics.publishedBlogs}
             icon={<TrendingUp className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-emerald-500 to-emerald-700"
-            trend={{ value: 2, direction: "up" }}
+            trend={{ value: 0, direction: 'up' as const }}
           />
         </DataGrid>
 
@@ -256,22 +351,28 @@ export default function BloggerAnalyticsPage() {
         {/* Language Distribution */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Content by Language</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-            {Object.entries(
-              blogs.reduce((acc, blog) => {
-                acc[blog.language || "Other"] = (acc[blog.language || "Other"] || 0) + 1
-                return acc
-              }, {} as Record<string, number>)
-            ).map(([lang, count]) => (
-              <div
-                key={lang}
-                className="text-center p-4 bg-slate-50 rounded-xl"
-              >
-                <p className="text-2xl font-bold text-slate-900">{count}</p>
-                <p className="text-sm text-slate-500">{lang}</p>
-              </div>
-            ))}
-          </div>
+          {blogs.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+              {Object.entries(
+                blogs.reduce((acc, blog) => {
+                  acc[blog.language || "Other"] = (acc[blog.language || "Other"] || 0) + 1
+                  return acc
+                }, {} as Record<string, number>)
+              ).map(([lang, count]) => (
+                <div
+                  key={lang}
+                  className="text-center p-4 bg-slate-50 rounded-xl"
+                >
+                  <p className="text-2xl font-bold text-slate-900">{count}</p>
+                  <p className="text-sm text-slate-500">{lang}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <p>No blogs available to show language distribution</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tag, Plus, Edit, Trash2, Search } from "lucide-react"
-import { SmartField, Alert } from "@/components/ui"
+import { SmartField, Alert, LoadingState } from "@/components/ui"
+import { getMyBlogSubmissions } from "@/services/blogger"
 
 interface Category {
   id: number
@@ -26,25 +27,68 @@ export default function CategoriesPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<Category | Tag | null>(null)
   const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(true)
 
-  // Mock data - in production, this would come from API
-  const [categories, setCategories] = useState<Category[]>([
-    { id: 1, name: "Spirituality", slug: "spirituality", description: "Posts about spiritual topics", count: 12, color: "emerald" },
-    { id: 2, name: "Culture", slug: "culture", description: "Sufi culture and traditions", count: 8, color: "blue" },
-    { id: 3, name: "History", slug: "history", description: "Historical perspectives", count: 5, color: "purple" },
-    { id: 4, name: "Poetry", slug: "poetry", description: "Poetry analysis and appreciation", count: 15, color: "pink" },
-    { id: 5, name: "Music", slug: "music", description: "Sufi music and qawwali", count: 10, color: "amber" },
-  ])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
 
-  const [tags, setTags] = useState<Tag[]>([
-    { id: 1, name: "Rumi", slug: "rumi", count: 8 },
-    { id: 2, name: "Qawwali", slug: "qawwali", count: 12 },
-    { id: 3, name: "Meditation", slug: "meditation", count: 6 },
-    { id: 4, name: "Love", slug: "love", count: 15 },
-    { id: 5, name: "Peace", slug: "peace", count: 9 },
-    { id: 6, name: "Unity", slug: "unity", count: 7 },
-    { id: 7, name: "Devotion", slug: "devotion", count: 5 },
-  ])
+  // Fetch blogs and extract categories and tags
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getMyBlogSubmissions()
+        if (response.status === 200) {
+          const blogs = response.data.blogs || []
+          
+          // Extract unique categories with counts
+          const categoryMap = new Map<string, number>()
+          const tagMap = new Map<string, number>()
+          const colors = ["emerald", "blue", "purple", "pink", "amber", "indigo", "cyan", "orange"]
+          
+          blogs.forEach((blog: any, index: number) => {
+            // Count categories
+            if (blog.category) {
+              categoryMap.set(blog.category, (categoryMap.get(blog.category) || 0) + 1)
+            }
+            
+            // Count tags
+            if (blog.tags && Array.isArray(blog.tags)) {
+              blog.tags.forEach((tag: string) => {
+                tagMap.set(tag, (tagMap.get(tag) || 0) + 1)
+              })
+            }
+          })
+          
+          // Convert to Category array
+          const categoriesData: Category[] = Array.from(categoryMap.entries()).map(([name, count], index) => ({
+            id: index + 1,
+            name,
+            slug: name.toLowerCase().replace(/\s+/g, "-"),
+            description: `${name} blog posts`,
+            count,
+            color: colors[index % colors.length],
+          }))
+          
+          // Convert to Tag array
+          const tagsData: Tag[] = Array.from(tagMap.entries()).map(([name, count], index) => ({
+            id: index + 1,
+            name,
+            slug: name.toLowerCase().replace(/\s+/g, "-"),
+            count,
+          }))
+          
+          setCategories(categoriesData)
+          setTags(tagsData)
+        }
+      } catch (error) {
+        console.error("Error fetching categories and tags:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   const filteredCategories = categories.filter(
     (c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -66,6 +110,10 @@ export default function CategoriesPage() {
       setSuccess("Tag deleted successfully")
       setTimeout(() => setSuccess(""), 3000)
     }
+  }
+
+  if (loading) {
+    return <LoadingState message="Loading categories and tags..." size="lg" />
   }
 
   const getColorClass = (color: string) => {

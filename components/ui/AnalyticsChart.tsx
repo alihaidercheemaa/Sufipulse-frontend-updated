@@ -81,7 +81,7 @@ export default function AnalyticsChart({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full ">
       {(title || description) && (
         <div className="mb-4">
           {title && <h3 className="text-lg font-semibold text-slate-900">{title}</h3>}
@@ -89,16 +89,16 @@ export default function AnalyticsChart({
         </div>
       )}
 
-      <div className="relative" style={{ height }}>
+      <div className="relative " style={{ height }}>
         <svg
           viewBox="0 0 100 100"
-          className="w-full h-full"
+          className="w-full absolute  h-full"
           preserveAspectRatio="none"
           onMouseLeave={() => setHoveredPoint(null)}
         >
           {/* Grid lines */}
           {showGrid && (
-            <g className="text-slate-200">
+            <g className="text-slate-200 ">
               {[0, 25, 50, 75, 100].map((y) => (
                 <line
                   key={y}
@@ -149,16 +149,16 @@ export default function AnalyticsChart({
                 {showTooltip && hoveredPoint === i && (
                   <g>
                     <rect
-                      x={bar.x}
-                      y={bar.y - 12}
+                      x={bar.x - 20}
+                      y={bar.y - 5}
                       width="20"
                       height="10"
                       fill="#1e293b"
                       rx="2"
                     />
                     <text
-                      x={bar.x + 10}
-                      y={bar.y - 5}
+                      x={bar.x - 6}
+                      y={bar.y + 1}
                       textAnchor="middle"
                       fill="white"
                       fontSize="3"
@@ -210,19 +210,20 @@ export default function AnalyticsChart({
                 {showTooltip && hoveredPoint === i && (
                   <g>
                     <rect
-                      x={point.x - 10}
-                      y={point.y - 15}
+                      x={point.x - 25}
+                      y={point.y - 5}
                       width="20"
                       height="12"
                       fill="#1e293b"
                       rx="2"
                     />
                     <text
-                      x={point.x}
-                      y={point.y - 6}
+                      x={point.x - 10}
+                      y={point.y + 1}
                       textAnchor="middle"
                       fill="white"
                       fontSize="3"
+                      
                     >
                       {formatY(point.value)}
                     </text>

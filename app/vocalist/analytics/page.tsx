@@ -15,7 +15,7 @@ import {
   Calendar,
 } from "lucide-react"
 import { getKalamsByVocalist } from "@/services/vocalist"
-import { getStudioVisitRequestsByVocalist, getRemoteRecordingRequestsByVocalist } from "@/services/requests"
+import { getMyStudioRequests, getMyRemoteRequests } from "@/services/recordingRequests"
 import { AnalyticsChart, PieChartWidget, MetricCard, DataGrid, LoadingState } from "@/components/ui"
 
 interface Kalam {
@@ -32,6 +32,9 @@ interface Kalam {
 
 interface RecordingRequest {
   id: number
+  vocalist_id: number
+  kalam_id: number
+  lyric_title: string
   status: string
   created_at: string
 }
@@ -51,13 +54,13 @@ export default function VocalistAnalyticsPage() {
     try {
       const [kalamsRes, studioRes, remoteRes] = await Promise.all([
         getKalamsByVocalist(),
-        getStudioVisitRequestsByVocalist(),
-        getRemoteRecordingRequestsByVocalist(),
+        getMyStudioRequests(),
+        getMyRemoteRequests(),
       ])
 
       setKalams(kalamsRes.data.kalams || [])
-      setStudioRequests(studioRes.data || [])
-      setRemoteRequests(remoteRes.data || [])
+      setStudioRequests(studioRes.data.requests || [])
+      setRemoteRequests(remoteRes.data.requests || [])
     } catch (error) {
       console.error("Error fetching analytics:", error)
     } finally {
@@ -76,15 +79,38 @@ export default function VocalistAnalyticsPage() {
     ).length,
   }
 
-  // Generate mock trend data
-  const trendData = Array.from({ length: timeRange === "30d" ? 15 : 30 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (timeRange === "30d" ? 30 : 90) + i)
-    return {
-      label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      value: Math.floor(Math.random() * 5) + 1,
+  // Generate real trend data from kalam submissions
+  const trendData = (() => {
+    const days = timeRange === "30d" ? 15 : 30
+    const now = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    // Initialize daily accumulators
+    const dailyAccum: Record<string, number> = {}
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(date.getDate() + i)
+      const dateKey = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      dailyAccum[dateKey] = 0
     }
-  })
+
+    // Count kalams created on each day
+    kalams.forEach((kalam) => {
+      const kalamDate = new Date(kalam.created_at)
+      const dateKey = kalamDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      
+      if (dailyAccum[dateKey] !== undefined) {
+        dailyAccum[dateKey]++
+      }
+    })
+
+    // Convert to array format for charts
+    return Object.entries(dailyAccum).map(([date, count]) => ({
+      label: date,
+      value: count,
+    }))
+  })()
 
   // Recording type distribution
   const typeData = [

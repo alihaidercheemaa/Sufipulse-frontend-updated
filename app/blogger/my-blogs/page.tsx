@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { BookOpen, Grid, List, Search, Filter, Eye, MessageCircle, Share2, Heart, PenTool, Plus } from "lucide-react"
-import { getMyBlogSubmissions, getMyBlogComments } from "@/services/blogger"
+import { getMyBlogSubmissions, getBlogComments } from "@/services/blogger"
 import { BlogCard, EngagementMetrics, EmptyState, LoadingState, Alert } from "@/components/ui"
 
 interface BlogSubmission {
@@ -29,7 +29,7 @@ interface BlogSubmission {
   comment_count?: number
 }
 
-interface Comment {
+interface BlogComment {
   id: number
   blog_id: number
   commenter_name: string
@@ -41,7 +41,7 @@ interface Comment {
 
 export default function MyBlogsPage() {
   const [blogs, setBlogs] = useState<BlogSubmission[]>([])
-  const [comments, setComments] = useState<Comment[]>([])
+  const [comments, setComments] = useState<BlogComment[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [searchQuery, setSearchQuery] = useState("")
@@ -55,20 +55,32 @@ export default function MyBlogsPage() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [blogsResponse, commentsResponse] = await Promise.all([
-        getMyBlogSubmissions(),
-        getMyBlogComments(),
-      ])
-
-      if (blogsResponse.status === 200) {
-        setBlogs(blogsResponse.data.blogs || [])
+      
+      // Fetch blogs - EXACT same pattern as dashboard page
+      const response = await getMyBlogSubmissions()
+      if (response.status === 200) {
+        const blogsData: BlogSubmission[] = response.data.blogs || []
+        setBlogs(blogsData)
+        
+        // Fetch comments for recent blogs only (same as dashboard approach)
+        const allComments: BlogComment[] = []
+        const recentBlogs = blogsData.slice(0, 3) // Only fetch for first 3 blogs
+        for (const blog of recentBlogs) {
+          try {
+            const commentsRes = await getBlogComments(blog.id, 1, 3)
+            if (commentsRes.data) {
+              const comments = Array.isArray(commentsRes.data) ? commentsRes.data : []
+              allComments.push(...comments)
+            }
+          } catch (err) {
+            console.warn(`Could not fetch comments for blog ${blog.id}`)
+          }
+        }
+        setComments(allComments)
       }
-
-      if (commentsResponse.status === 200) {
-        setComments(commentsResponse.data.comments || [])
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error)
+    } catch (error: any) {
+      console.error("Error fetching blogs:", error)
+      // Keep existing data on error
     } finally {
       setLoading(false)
     }
@@ -77,25 +89,39 @@ export default function MyBlogsPage() {
   const filteredBlogs = blogs.filter((blog) => {
     const matchesSearch = blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || blog.status === statusFilter
-    return matchesSearch && matchesStatus
+    
+    // Match status based on database status values
+    if (statusFilter === "all") return matchesSearch
+    if (statusFilter === "posted") return matchesSearch && (blog.status === "posted" || blog.status === "approved" || blog.status === "published")
+    if (statusFilter === "pending") return matchesSearch && (blog.status === "pending" || blog.status === "review" || blog.status === "under_review")
+    if (statusFilter === "revision") return matchesSearch && (blog.status === "revision" || blog.status === "changes_requested")
+    if (statusFilter === "rejected") return matchesSearch && blog.status === "rejected"
+    if (statusFilter === "review") return matchesSearch && blog.status === "review"
+    
+    return matchesSearch
   })
 
   const getStatusCounts = () => {
     const counts: Record<string, number> = {
       all: blogs.length,
-      published: 0,
+      posted: 0,
       pending: 0,
+      review: 0,
       revision: 0,
+      rejected: 0,
     }
 
     blogs.forEach((blog) => {
       if (blog.status === "posted" || blog.status === "approved" || blog.status === "published") {
-        counts.published++
-      } else if (blog.status === "pending" || blog.status === "review" || blog.status === "under_review") {
+        counts.posted++
+      } else if (blog.status === "pending" || blog.status === "under_review") {
         counts.pending++
+      } else if (blog.status === "review") {
+        counts.review++
       } else if (blog.status === "revision" || blog.status === "changes_requested") {
         counts.revision++
+      } else if (blog.status === "rejected") {
+        counts.rejected++
       }
     })
 
@@ -232,9 +258,11 @@ export default function MyBlogsPage() {
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="all">All Status ({statusCounts.all})</option>
-                <option value="posted">Published ({statusCounts.published})</option>
+                <option value="posted">Published ({statusCounts.posted})</option>
+                <option value="review">In Review ({statusCounts.review})</option>
                 <option value="pending">Pending ({statusCounts.pending})</option>
-                <option value="revision">Revision ({statusCounts.revision})</option>
+                <option value="revision">Needs Revision ({statusCounts.revision})</option>
+                <option value="rejected">Rejected ({statusCounts.rejected})</option>
               </select>
             </div>
 
@@ -279,7 +307,7 @@ export default function MyBlogsPage() {
                 comment_count={blog.comment_count || 0}
                 like_count={blog.like_count || 0}
                 share_count={0}
-                layout={viewMode}
+                layout={viewMode === "grid" ? "vertical" : "horizontal"}
               />
             ))}
           </div>

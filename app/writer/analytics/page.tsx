@@ -79,15 +79,38 @@ export default function WriterAnalyticsPage() {
     published: kalams.filter((k) => k.kalam.published_at !== null).length,
   }
 
-  // Generate mock trend data
-  const trendData = Array.from({ length: timeRange === "30d" ? 15 : 30 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (timeRange === "30d" ? 30 : 90) + i)
-    return {
-      label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      value: Math.floor(Math.random() * 10) + 1,
+  // Generate real trend data from kalam submissions
+  const trendData = (() => {
+    const days = timeRange === "30d" ? 15 : 30
+    const now = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    // Initialize daily accumulators
+    const dailyAccum: Record<string, number> = {}
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(date.getDate() + i)
+      const dateKey = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      dailyAccum[dateKey] = 0
     }
-  })
+
+    // Count kalams submitted on each day
+    kalams.forEach((item) => {
+      const kalamDate = new Date(item.kalam.created_at)
+      const dateKey = kalamDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      
+      if (dailyAccum[dateKey] !== undefined) {
+        dailyAccum[dateKey]++
+      }
+    })
+
+    // Convert to array format for charts
+    return Object.entries(dailyAccum).map(([date, count]) => ({
+      label: date,
+      value: count,
+    }))
+  })()
 
   // Theme distribution
   const themeData = Object.entries(
